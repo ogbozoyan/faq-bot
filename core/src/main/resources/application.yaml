@@ -1,73 +1,14 @@
-app:
-  advisor:
-    logger:
-      order: 10
-    chat-memory:
-      order: 20
-      memory-size: 50
-      default-system-advise-text: "
-                        Use the conversation memory from the MEMORY section, surrounded by --------------------- to provide accurate answers.
-                        ---------------------
-                        
-                        MEMORY:
-                         {memory}
-                         
-                        --------------------- "
-      default-system-advise-text-ru: "
-                              Используй память разговора из раздела MEMORY, окруженную ---------------------, чтобы давать точные ответы.
-                              ---------------------
-                              
-                              MEMORY:
-                               {memory}
-                               
-                              --------------------- "
-    rag:
-      default-user-text-advice: "
-      Context information is below, surrounded by ---------------------
-
-                                ---------------------
-                                
-                                CONTEXT:
-                                {question_answer_context}
-                                
-                                ---------------------
-
-      Given the context information and no prior knowledge, answer the query.
-
-      Follow these rules:
-      
-      1. If the answer is not in the context, just say that you don't know.
-      2. Avoid statements like \"Based on the context...\" or \"The provided information...\".
-      
-      Query:
-      "
-      default-user-text-advice-ru: "
-      Контекстная информация находится ниже и выделена ---------------------.
-
-                          ---------------------
-                          
-                          CONTEXT:
-                          {question_answer_context}
-                          
-                          ---------------------
-
-            Учитывая информацию о контексте и отсутствие предварительных знаний, ответьте на запрос.
-            
-            Следуйте следующим правилам:
-            
-            1. Если ответ не содержится в контексте, просто скажите, что вы не знаете.
-            2. Избегайте заявлений типа \"Исходя из контекста...\" или \"Предоставленная информация...\".
-            
-            Вопрос:     
-            "
-      enabled: true
-      order: 30
-
 server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
   tomcat:
     max-swallow-size: ${MAX_FILE_SIZE:100MB}
 
 spring:
+  messages:
+    encoding: UTF-8
   servlet:
     multipart:
       max-file-size: ${MAX_FILE_SIZE:100MB}
@@ -87,7 +28,7 @@ spring:
       chat:
         options:
           model: ${OLLAMA_CHAT_MODEL:llama3.2:latest}
-          temperature: ${OLLAMA_CHAT_TEMPERATURE:0.2}
+          temperature: ${OLLAMA_CHAT_TEMPERATURE:0.5}
       vectorstore:
         pgvector:
           initialize-schema: true
@@ -108,7 +49,6 @@ spring:
   main:
     banner-mode: off
 
-#swagger
 springdoc:
   swagger-ui:
     enabled: true                  # Enable Swagger UI
@@ -142,3 +82,91 @@ logging:
           chat:
             client:
               advisor: debug
+
+app:
+  advisor:
+    logger:
+      order: 10
+    chat-memory:
+      order: 20
+      memory-size: 50
+      prompt:
+        default-system-advise-text: >
+          Use the conversation memory from the MEMORY section, surrounded by --------------------- to provide accurate answers.
+          ---------------------
+          
+          MEMORY:
+           {memory}
+          
+          ---------------------
+        default-system-advise-text-ru: >
+          Используй память разговора из раздела MEMORY, окруженную ---------------------, чтобы давать точные ответы.
+          ---------------------
+          
+          MEMORY:
+           {memory}
+          
+          ---------------------
+    rag:
+      enabled: true
+      order: 30
+      prompt:
+        default-user-text-advice: >
+          Context information is below, surrounded by ---------------------
+          
+                                    ---------------------
+          
+                                    CONTEXT:
+                                    {question_answer_context}
+          
+                                    ---------------------
+          
+          Given the context information and no prior knowledge, answer the query.
+          
+          Follow these rules:
+          
+          1. If the answer is not in the context, just say that you don't know.
+          2. Avoid statements like \"Based on the context...\" or \"The provided information...\".
+          
+          Query:
+
+        default-user-text-advice-ru: >
+          Контекстная информация находится ниже и выделена ---------------------.
+          
+                              ---------------------
+          
+                              CONTEXT:
+                              {question_answer_context}
+          
+                              ---------------------
+          
+                Учитывая информацию о контексте и отсутствие предварительных знаний, ответьте на запрос.
+          
+                Следуйте следующим правилам:
+          
+                1. Если ответ не содержится в контексте, просто скажите, что вы не знаете.
+                2. Избегайте заявлений типа \"Исходя из контекста...\" или \"Предоставленная информация...\".
+          
+                Вопрос:
+  assistant:
+    prompt:
+
+      system-message-ru: >
+        Ты — помощник для сотрудников АО «Концерн Росэнергоатом», обладающий возможностями вызова инструментов**. Пиши «фактический» ответ, основываясь 
+        на данных и (при необходимости) результатах инструментов, но не злоупотребляй ими.
+        Отвечай ТОЛЬКО на основе предоставленных данных. 
+        Если информации нет, скажи: "Данные не найдены".
+
+        **Инструкции**:
+        1. Не отвечай на "НЕВАЛИДНЫЙ ЗАПРОС".
+        2. Не упоминай номера документов, имена, локации.
+        3. Избегай формулировок вроде "по моим данным" — излагай только факты.
+        4. Если в предоставленном контексте есть противоречия, прямо укажи это.
+
+        **Использование инструментов (Tools)**:
+        - Вызывай инструменты только при **крайней необходимости**.  
+          (Например, если у тебя нет нужных сведений в контексте, и без инструмента ответить невозможно.)
+        - Если вопрос простой, не нужно прибегать к инструментам (например, «покажи пример цикла for»).
+        - Получив результат от инструмента, используй его, чтобы корректно и полно ответить на исходный вопрос.
+        
+        Think step by step before answering and give three answers.
