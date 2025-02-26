@@ -28,7 +28,7 @@ class AiModelConfiguration(
     private val loggingOrder = Ordered.HIGHEST_PRECEDENCE + LOGGER_ADVISOR_ORDER
 
     @Bean
-    fun simpleOllamaChatClient(): ChatClient = chatClientBuilder
+    fun cleanChatClient(): ChatClient = chatClientBuilder
         .clone()
         .defaultAdvisors(
             SimpleLoggerAdvisor(
@@ -38,7 +38,7 @@ class AiModelConfiguration(
         .build()
 
     @Bean
-    fun ollamaClient(jdbcTemplate: JdbcTemplate): ChatClient {
+    fun chatClient(jdbcTemplate: JdbcTemplate): ChatClient {
 
         val simpleLoggerAdvisor = SimpleLoggerAdvisor(
             loggingOrder

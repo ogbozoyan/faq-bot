@@ -20,8 +20,8 @@ import ru.ogbozoyan.core.web.dto.PostModeratorResponse
 
 @Service
 class AssistantService(
-    @Qualifier("ollamaClient") private val ollamaChat: ChatClient,
-    @Qualifier("simpleOllamaChatClient") private val chatClient: ChatClient,
+    @Qualifier("chatClient") private val chatClient: ChatClient,
+    @Qualifier("cleanChatClient") private val cleanChatClient: ChatClient,
     private val aiRagAdvisorFactory: AiRagAdvisorFactory,
     private val tools: Tools,
     var vectorStore: VectorStore,
@@ -310,7 +310,7 @@ class AssistantService(
             censorSystemMessage = censorSystemMessage.replace("<QUESTION>", request.question)
             documents?.let { censorSystemMessage = censorSystemMessage.replace("<DOCUMENT>", it) }
 
-            val censorResponse = chatClient.prompt()
+            val censorResponse = cleanChatClient.prompt()
                 .messages(
                     SystemMessage(censorSystemMessage),
                     UserMessage(request.question),
@@ -342,12 +342,12 @@ class AssistantService(
             lastDecision = censorResponse.decision
         }
 
-        log.error("Censor failed: did not receive 'ДА' twice in a row after $CENSOR_ROUNDS attempts.")
+        log.warn("Censor failed: did not receive 'ДА' twice in a row after $CENSOR_ROUNDS attempts.")
         return false
     }
 
     private fun callAssistant(question: String, conversationId: String = MOCK_CONVERSATION_ID) =
-        ollamaChat.prompt(Prompt(listOf(UserMessage(question))))
+        chatClient.prompt(Prompt(listOf(UserMessage(question))))
             .advisors { advisorSpec ->
                 advisorSpec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, conversationId)
                 advisorSpec.param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 3)
@@ -361,7 +361,7 @@ class AssistantService(
 
         moderatorSystemMessage = moderatorSystemMessage.replace("<REQUEST>", request.question)
         moderatorSystemMessage = moderatorSystemMessage.replace("<ASSISTANT_ANSWER>", assistantResponse)
-        val moderatorResponse = chatClient.prompt()
+        val moderatorResponse = cleanChatClient.prompt()
             .messages(
                 listOf(
                     SystemMessage(moderatorSystemMessage),
@@ -379,7 +379,7 @@ class AssistantService(
 
         postModeratorSystemMessage = postModeratorSystemMessage.replace("<REQUEST>", request.question)
         postModeratorSystemMessage = postModeratorSystemMessage.replace("<ASSISTANT_ANSWER>", assistantResponse)
-        val postModeratorResponse = chatClient.prompt()
+        val postModeratorResponse = cleanChatClient.prompt()
             .messages(
                 listOf(
                     SystemMessage(postModeratorSystemMessage),
