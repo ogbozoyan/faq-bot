@@ -8,9 +8,9 @@ data class ModeratorResponse(
 ) {
     init {
         if (!isApproved) {
-            require(!rejectionReason.isNullOrBlank()) { "rejectionReason должен быть указан, если isApproved = false" }
+            require(!rejectionReason.isNullOrBlank()) { "rejectionReason must be filled, if isApproved = false" }
         } else {
-            require(rejectionReason == null) { "rejectionReason должен быть null, если isApproved = true" }
+            require(rejectionReason.isNullOrBlank()) { "rejectionReason must be null, if isApproved = true" }
         }
     }
 }

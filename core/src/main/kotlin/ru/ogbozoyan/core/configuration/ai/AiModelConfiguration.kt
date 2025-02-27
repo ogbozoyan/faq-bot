@@ -17,7 +17,7 @@ import ru.ogbozoyan.core.configuration.MOCK_CONVERSATION_ID
 @Configuration
 class AiModelConfiguration(
     private val chatClientBuilder: ChatClient.Builder,
-    @Value("\${app.assistant.prompt.system-message-ru}") private val systemMessageRu: String,
+    @Value("\${app.prompt.system-message-ru}") private val systemMessageRu: String,
     @Value("\${app.advisor.chat-memory.prompt.default-system-advise-text-ru}") private val DEFAULT_SYSTEM_TEXT_ADVISE_RU: String,
     @Value("\${app.advisor.logger.order}") private val LOGGER_ADVISOR_ORDER: Int,
     @Value("\${app.advisor.chat-memory.order}") private val CHAT_MEMORY_ADVISOR_ORDER: Int,
@@ -31,9 +31,9 @@ class AiModelConfiguration(
     fun cleanChatClient(): ChatClient = chatClientBuilder
         .clone()
         .defaultAdvisors(
-            SimpleLoggerAdvisor(
-                loggingOrder
-            )
+//            SimpleLoggerAdvisor(
+//                loggingOrder
+//            )
         )
         .build()
 
@@ -63,7 +63,7 @@ class AiModelConfiguration(
         return chatClientBuilder.clone()
             .defaultSystem(systemMessageRu)
             .defaultAdvisors(
-                simpleLoggerAdvisor,
+//                simpleLoggerAdvisor,
                 chatMemoryAdvisor,
             )
             .build()
