@@ -33,32 +33,40 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+//  AI
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     implementation 'org.springframework.ai:spring-ai-pgvector-store-spring-boot-starter'
     implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
+
+//  Core
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
+
+//  Data
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+//  Observability
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0'
+    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.5'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.micrometer:micrometer-registry-otlp'
+    implementation platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:${otelInstrumentationVersion}")
+
+
+//  Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.junit.platform:junit-platform-launcher:1.10.3'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
-
-    implementation platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:${otelInstrumentationVersion}")
-    implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
-
-
-    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
-    implementation 'io.micrometer:micrometer-registry-otlp'
-    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.5'
-    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0'
-
 }
 
 kotlin {
