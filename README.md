@@ -1,16 +1,10 @@
 1.
 
 ```sh
-cd docker-elk
-```
-
-2.
-
-```sh
 docker compose up setup
 ```
 
-3.
+2.
 
 ```sh
 docker compose up
