@@ -61,6 +61,11 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-otlp'
     implementation platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:${otelInstrumentationVersion}")
 
+//  ELK
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
+    implementation 'ch.qos.logback:logback-classic'
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+    implementation 'org.codehaus.janino:janino'
 
 //  Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

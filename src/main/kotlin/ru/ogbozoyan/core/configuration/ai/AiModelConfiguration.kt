@@ -31,9 +31,9 @@ class AiModelConfiguration(
     fun cleanChatClient(): ChatClient = chatClientBuilder
         .clone()
         .defaultAdvisors(
-//            SimpleLoggerAdvisor(
-//                loggingOrder
-//            )
+            SimpleLoggerAdvisor(
+                loggingOrder
+            )
         )
         .build()
 
@@ -63,7 +63,7 @@ class AiModelConfiguration(
         return chatClientBuilder.clone()
             .defaultSystem(systemMessageRu)
             .defaultAdvisors(
-//                simpleLoggerAdvisor,
+                simpleLoggerAdvisor,
                 chatMemoryAdvisor,
             )
             .build()

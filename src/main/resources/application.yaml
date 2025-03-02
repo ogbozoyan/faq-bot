@@ -18,7 +18,7 @@ spring:
       max-file-size: ${MAX_FILE_SIZE:100MB}
       max-request-size: ${MAX_FILE_SIZE:100MB}
   application:
-    name: core
+    name: faq-bot
   datasource:
     url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/core}
     username: ${DATASOURCE_USERNAME:admin}
@@ -81,9 +81,16 @@ springdoc:
     path: /api-docs                # Path to OpenAPI docs
 
 logging:
-  pattern:
-    console: "%clr(%d{dd-MM-yyyy HH:mm:ss.SSS}){blue} %clr(${LOG_LEVEL_PATTERN: - %5p}) %clr(${PID:- }){magenta} %clr([%thread]){yellow}  %cyan(%logger{39}:%L)  %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+  file:
+    name: logs/app.log
+  logstash:
+    enabled: false
   level:
+    net:
+      logstash:
+        logback:
+          appender:
+            LogstashTcpSocketAppender: off
     ru:
       ogbozoyan:
         core:

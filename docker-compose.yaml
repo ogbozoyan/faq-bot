@@ -1,36 +1,104 @@
+version: '3.8'
+
 services:
-  ollama:
-    container_name: ollama
-    image: ollama/ollama:latest
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "11434:11434"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
-    healthcheck:
-      test: ollama list || exit 1
-      interval: 10s
-      timeout: 30s
-      retries: 5
-      start_period: 10s
-    environment:
-      - OLLAMA_DEBUG=1
-    entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
-    networks:
-      - ollama_network
+
+
+  #ELK
+  setup:
+    profiles:
+      - setup
+    build:
+      context: ./docker/setup
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    init: true
     volumes:
-      - ollama:/root/.ollama
-      - ./entrypoint.sh:/entrypoint.sh
-      - shared-data:/shared
+      - ./docker/setup/entrypoint.sh:/entrypoint.sh:ro,Z
+      - ./docker/setup/lib.sh:/lib.sh:ro,Z
+      - ./docker/setup/roles:/roles:ro,Z
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+      METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+      MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    build:
+      context: ./docker/elasticsearch
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./docker/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # Bootstrap password.
+      # Used to initialize the keystore during the initial startup of
+      # Elasticsearch. Ignored on subsequent runs.
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    networks:
+      - elk
+    restart: unless-stopped
+
+  logstash:
+    build:
+      context: ./docker/logstash
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./docker/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./docker/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - "5044:5044"
+      - "5001:5001/tcp"
+      - "5001:5001/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    build:
+      context: ./docker/kibana
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./docker/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - "5601:5601"
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+  #/ELK
+
   pgvector:
     image: 'pgvector/pgvector:pg16'
-    container_name: pgvector
+    container_name: pgvector-faq
+    restart: always
     environment:
       - 'POSTGRES_DB=core'
       - 'POSTGRES_PASSWORD=admin'
@@ -39,42 +107,42 @@ services:
       - "org.springframework.boot.service-connection=postgres"
     ports:
       - '5432:5432'
-    networks:
-      - ollama_network
     volumes:
       - pgvector-data:/var/lib/postgresql/data
 
-  backend:
-    build:
-      context: ./core
-      dockerfile: Dockerfile
-    container_name: backend
-    ports:
-      - "8080:8080"
-    environment:
-      - 'DATASOURCE_URL=${DATASOURCE_URL:-jdbc:postgresql://pgvector:5432/core}'
-      - 'DATASOURCE_USERNAME=${POSTGRES_USER:-admin}'
-      - 'DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-admin}'
-      - 'MAX_FILE_SIZE=${MAX_FILE_SIZE:-100MB}'
-      - 'OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434/}'
-      - 'AI_OLLAMA_EMBEDDING_OPTIONS_MODEL=${AI_OLLAMA_EMBEDDING_OPTIONS_MODEL:-nomic-embed-text:latest}'
-      - 'OLLAMA_CHAT_MODEL=${OLLAMA_CHAT_MODEL:-llama3.1:latest}'
-      - 'OLLAMA_CHAT_TEMPERATURE=${OLLAMA_CHAT_TEMPERATURE:-0.5}'
-    depends_on:
-      - pgvector
-    networks:
-      - ollama_network
-    volumes:
-      - backend-logs:/app/logs
-      - shared-data:/shared
-
+#  backend:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: backend
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      - 'DATASOURCE_URL=jdbc:postgresql://pgvector:5432/core'
+#      - 'DATASOURCE_USERNAME=admin'
+#      - 'DATASOURCE_PASSWORD=admin'
+#      - 'MAX_FILE_SIZE=100MB'
+#      - 'OLLAMA_BASE_URL=http://ollama:11434/'
+#      - 'AI_OLLAMA_EMBEDDING_OPTIONS_MODEL=nomic-embed-text:latest'
+#      - 'OLLAMA_CHAT_MODEL=llama3.1:latest'
+#      - 'OLLAMA_CHAT_TEMPERATURE=0.5'
+#      - 'LOGSTASH_HOST=logstash'
+#      - 'LOGSTASH_PORT=5044'
+#    depends_on:
+#      - pgvector
+#      - logstash
+#      - elasticsearch
+#      - kibana
+#    volumes:
+#      - backend-logs:/app/logs
+#      - shared-data:/shared
 
 networks:
-  ollama_network:
+  elk:
     driver: bridge
 
 volumes:
+  elasticsearch:
   pgvector-data:
   backend-logs:
   shared-data:
-  ollama:
