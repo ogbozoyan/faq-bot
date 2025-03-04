@@ -41,7 +41,7 @@ spring:
       chat:
         options:
           model: ${CHAT_MODEL:gpt-4o-mini-2024-07-18}
-          temperature: ${CHAT_TEMPERATURE:0.8}
+          temperature: ${CHAT_TEMPERATURE:0.5}
       api-key: ${OPENAI_API_KEY}
     vectorstore:
       observations:
@@ -50,7 +50,7 @@ spring:
         initialize-schema: true
         index-type: HNSW
         distance-type: COSINE_DISTANCE
-        dimensions: 768
+        dimensions: 1536
   flyway:
     enabled: true
     locations: classpath:db/migration
