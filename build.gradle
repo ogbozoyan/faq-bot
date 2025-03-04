@@ -54,12 +54,16 @@ dependencies {
 
 //  Observability
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.5'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    runtimeOnly 'io.micrometer:micrometer-registry-otlp'
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
     implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0'
-    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.5'
-    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-    implementation 'io.micrometer:micrometer-registry-otlp'
     implementation platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:${otelInstrumentationVersion}")
+    implementation 'io.opentelemetry:opentelemetry-context'
+
 
 //  ELK
     implementation 'org.springframework.boot:spring-boot-starter-logging'

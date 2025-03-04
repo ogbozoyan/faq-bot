@@ -1,8 +1,6 @@
 version: '3.8'
 
 services:
-
-
   #ELK
   setup:
     profiles:
@@ -26,7 +24,7 @@ services:
       MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
       BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
     networks:
-      - elk
+      - observability
     depends_on:
       - elasticsearch
 
@@ -52,7 +50,7 @@ services:
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     networks:
-      - elk
+      - observability
     restart: unless-stopped
 
   logstash:
@@ -72,12 +70,13 @@ services:
       LS_JAVA_OPTS: -Xms256m -Xmx256m
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
     networks:
-      - elk
+      - observability
     depends_on:
       - elasticsearch
     restart: unless-stopped
 
   kibana:
+    restart: unless-stopped
     build:
       context: ./docker/kibana
       args:
@@ -88,12 +87,46 @@ services:
       - "5601:5601"
     environment:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
     depends_on:
       - elasticsearch
-    restart: unless-stopped
+    networks:
+      - observability
+
   #/ELK
+
+  #Observability
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - observability
+
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      - ./docker/grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3000:3000"
+    networks:
+      - observability
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - observability
+  #/Observability
 
   pgvector:
     image: 'pgvector/pgvector:pg16'
@@ -109,6 +142,8 @@ services:
       - '5432:5432'
     volumes:
       - pgvector-data:/var/lib/postgresql/data
+    networks:
+      - observability
 
 #  backend:
 #    build:
@@ -138,7 +173,7 @@ services:
 #      - shared-data:/shared
 
 networks:
-  elk:
+  observability:
     driver: bridge
 
 volumes:

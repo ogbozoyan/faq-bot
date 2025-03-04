@@ -1,15 +1,10 @@
 <configuration>
     <springProperty name="applicationName" source="spring.application.name"/>
 
-    <springProperty scope="context"
-                    name="logstashEnabled"
-                    source="logging.logstash.enabled"
-                    defaultValue="false"/>
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
-                %white(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) [%magenta(%15.15thread)] [%X{traceId},%X{spanId}] %cyan(%logger{36}:%L) - %msg%n%throwable
+                %white(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) [%magenta(%15.15thread)] [${applicationName:-}, %X{traceId:-}, %X{spanId:-}] %cyan(%logger{36}:%L) - %msg%n%throwable
             </pattern>
         </encoder>
     </appender>
@@ -40,17 +35,8 @@
         </encoder>
     </appender>
 
-    <!-- При необходимости можно отключить шум от библиотеки net.logstash.logback целиком: -->
-    <logger name="net.logstash.logback" level="OFF"/>
-
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
-
-        <!-- Если logstashEnabled == "true", добавим аппендер. Иначе — пропустим -->
-        <if condition='("true").equals(property("logstashEnabled"))'>
-            <then>
-                <appender-ref ref="LOGSTASH"/>
-            </then>
-        </if>
+        <appender-ref ref="LOGSTASH"/>
     </root>
 </configuration>
