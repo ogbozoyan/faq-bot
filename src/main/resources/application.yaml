@@ -1,15 +1,4 @@
-server:
-  servlet:
-    encoding:
-      charset: UTF-8
-      force: true
-  tomcat:
-    max-swallow-size: ${MAX_FILE_SIZE:100MB}
-
-
-
-
-
+--- #spring server
 spring:
   messages:
     encoding: UTF-8
@@ -19,21 +8,31 @@ spring:
       max-request-size: ${MAX_FILE_SIZE:100MB}
   application:
     name: faq-bot
-  datasource:
-    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/core}
-    username: ${DATASOURCE_USERNAME:admin}
-    password: ${DATASOURCE_PASSWORD:admin}
+  main:
+    banner-mode: off
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  tomcat:
+    max-swallow-size: ${MAX_FILE_SIZE:100MB}
+
+
+--- #spring ai
+spring:
   ai:
     image:
       observations:
-        include-prompt: true
+        include-prompt: ${AI_IMAGE_OBSERVATIONS_PROMPT_EXPOSE:true}
     chat:
       client:
         observations:
-          include-input: true
+          include-input: ${AI_CHAT_CLIENT_OBSERVATIONS_INPUT_EXPOSE:true}
       observations:
-        include-completion: true
-        include-prompt: true
+        include-completion: ${AI_CHAT_OBSERVATIONS_COMPLETION_EXPOSE:true}
+        include-error-logging: ${AI_CHAT_OBSERVATIONS_ERROR_LOGGING_EXPOSE:true}
+        include-prompt: ${AI_CHAT_OBSERVATIONS_PROMPT_EXPOSE:true}
     openai:
       embedding:
         options:
@@ -51,28 +50,58 @@ spring:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
         dimensions: 1536
+
+
+
+--- #spring datasource
+spring:
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/core}
+    username: ${DATASOURCE_USERNAME:admin}
+    password: ${DATASOURCE_PASSWORD:admin}
   flyway:
     enabled: true
     locations: classpath:db/migration
-  main:
-    banner-mode: off
 
+--- #observability
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,prometheus
-  tracing:
-    sampling:
-      probability: 1.0
+        include: health, info, metrics, prometheus
   metrics:
     distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+          spring:
+            ai:
+              chat:
+                client: true
+          db:
+            vector:
+              client:
+                operation: true
+          gen_ai:
+            client:
+              operation: true
+        spring:
+          ai:
+            chat:
+              client: true
+        db:
+          vector:
+            client:
+              operation: true
+        gen_ai:
+          client:
+            operation: true
+        do.sleep.method.timed: true
+        http.server.requests: true
       percentiles:
         do.sleep.method.timed: 0.99, 0.95, 0.9, 0.7, 0.5
         http.server.requests: 0.99, 0.95, 0.9, 0.7, 0.5
-      percentiles-histogram:
-        do.sleep.method.timed: true
-        http.server.requests: true
       minimum-expected-value:
         do.sleep.method.timed: 100ms
         http.server.requests: 100ms
@@ -82,6 +111,17 @@ management:
       slo:
         do.sleep.method.timed: 300ms,500ms,1s,2s
         http.server.requests: 300ms,500ms,1s,2s
+  observations:
+    key-values:
+      application: ${spring.application.name}
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0
+
+--- #swagger
 springdoc:
   swagger-ui:
     enabled: true                  # Enable Swagger UI
@@ -89,6 +129,7 @@ springdoc:
   api-docs:
     path: /api-docs                # Path to OpenAPI docs
 
+--- #logging level
 logging:
   level:
     net:
@@ -124,6 +165,7 @@ logging:
             client:
               advisor: debug
 
+--- #application settings
 app:
   rounds:
     assistant-max-rounds: 3

@@ -63,6 +63,7 @@ dependencies {
     implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0'
     implementation platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:${otelInstrumentationVersion}")
     implementation 'io.opentelemetry:opentelemetry-context'
+    implementation 'com.github.loki4j:loki-logback-appender:1.6.0'
 
 
 //  ELK
